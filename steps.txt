@@ -1,0 +1,50 @@
+**URL Shortener Application Workflow**
+
+1. **User Request**  
+   - The user sends a request to shorten a URL using `curl` or a web browser.
+
+2. **Kubernetes Routes Request**  
+   - The request reaches the Kubernetes **NodePort Service** (`url-shortener-service`).
+   - The service forwards the request to one of the URL shortener pods for processing.
+
+3. **Flask App Processes URL**  
+   - Inside the chosen pod, the Flask application handles the request at the `/shorten` endpoint.
+
+4. **Short Code Generation**  
+   - The application generates a short code for the given URL using the **MD5 hashing algorithm**.
+   - Example: `https://example.com` → `c984d0`
+
+5. **Store in Redis**  
+   - The app connects to the **Redis database** through its ClusterIP Service (`redis-service`).
+   - It stores a key-value pair where:
+     - **Key** = Short code (e.g., `c984d0`)
+     - **Value** = Original URL (e.g., `https://example.com`)
+
+6. **Response to User**  
+   - The app constructs and returns a JSON response containing the shortened URL.
+   - Example response:
+     ```json
+     { "shortened_url": "https://short.ly/c984d0" }
+     ```
+
+7. **Accessing the Short URL**  
+   - When a user visits the shortened URL (`https://short.ly/c984d0`), another request is triggered.
+
+8. **Lookup in Redis**  
+   - The Flask app receives a **GET** request at `/c984d0`.
+   - It searches for `c984d0` in the Redis database to find the original URL.
+
+9. **Redirect to Original URL**  
+   - If found, the app returns an **HTTP 302 Redirect** to the original URL (`https://example.com`).
+   - If not found, the app responds with a **404 Not Found** error.
+   - When using `curl -L`, it follows the redirect to open the original website automatically.
+
+---
+
+### Key Components in the Workflow:
+- **NodePort Service**: Exposes the application to external traffic and routes it to the correct pod.
+- **Flask App**: Processes requests and generates shortened URLs.
+- **MD5 Hashing**: Creates a unique short code for each URL.
+- **Redis Database**: Stores the mapping between short codes and original URLs.
+- **HTTP 302 Redirect**: Redirects users from the shortened URL to the original one.
+
