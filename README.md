@@ -179,10 +179,6 @@ kubectl get svc
 minikube ip
 ```
 
-## License
-
-This project is open source and available under the MIT License.
-
 ## Files
 
 - `app.py`: Flask application for URL shortening
